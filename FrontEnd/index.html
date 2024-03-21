@@ -97,7 +97,42 @@
         </form>
       </section>
     </main>
+    <!---------- Fenêtre Modale pour l'ajout et la gestion des travaux ----------->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div id="modal-gallery-view">
+          <h2>Galerie Photo</h2>
+          <!-- Contenu de la vue Galerie Photo ici -->
+          <div id="modal-projects-container"></div>
+          <!-- Conteneur pour les images dans la modale -->
+          <div class="line"></div>
+          <button id="goToAddPhoto">Ajouter une photo</button>
+        </div>
 
+        <!---------- Ajout de la vue de l'ajout de photo ici ----------->
+        <div id="modal-add-photo-view">
+          <span><i class="fa-solid fa-arrow-left"></i></span>
+          <h2>Ajout Photo</h2>
+          <!-- Formulaire d'ajout de photo ici -->
+          <form id="photoAddForm">
+            <div id="addPhotoForm">
+              <span><i class="fa-regular fa-image"></i></span>
+              <label for="file" class="AjouterPhoto">+ Ajouter une photo</label>
+              <input type="file" id="file" name="image" />
+              <img src="#" alt="Apercu de l'image" class="image-preview" />
+              <p class="max-file-size">jng.png : 4 mo max</p>
+            </div>
+            <label for="title">Titre</label>
+            <input type="text" id="title" name="title" />
+            <label for="category">Catégorie</label>
+            <select name="category" id="category"></select>
+            <div class="line2"></div>
+            <button type="submit" class="valider">Valider</button>
+          </form>
+        </div>
+      </div>
+    </div>
     <footer>
       <nav>
         <ul>
