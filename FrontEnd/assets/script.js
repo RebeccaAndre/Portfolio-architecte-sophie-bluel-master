@@ -80,3 +80,52 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 });
+
+// // IV. Gestion de l'apparition et disparition de la fenêtre modale
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("modal");
+  const closeButton = document.querySelector(".close-button");
+  const goToAddPhoto = document.getElementById("goToAddPhoto");
+  const backToGalleryArrow = document.querySelector(
+    "#modal-add-photo-view .fa-arrow-left"
+  );
+
+  const openModalButton = document.getElementById("open-modal");
+
+  // Ouvrir la modale
+  if (openModalButton) {
+    openModalButton.addEventListener("click", () => {
+      console.log("Ouverture de la modale");
+      modal.style.display = "block";
+    });
+  } else {
+    console.log("Erreur: Bouton ouvrir modale non trouvé.");
+  }
+
+  // Fermer la modale
+  if (closeButton) {
+    closeButton.addEventListener("click", () => {
+      console.log("Fermeture de la modale via le bouton de fermeture");
+      modal.style.display = "none";
+    });
+
+    // Fermer la modale en cliquant en dehors
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        console.log("Fermeture de la modale en cliquant à l'extérieur");
+        modal.style.display = "none";
+      }
+    });
+  }
+});
+
+// Gestionnaire d'événements pour l'ouverture de la modale
+document.addEventListener("DOMContentLoaded", () => {
+  const openModalButton = document.getElementById("open-modal");
+  const modal = document.getElementById("modal");
+
+  openModalButton.addEventListener("click", () => {
+    modal.style.display = "block";
+    displayProjectsInModal(allProjects);
+  });
+});
