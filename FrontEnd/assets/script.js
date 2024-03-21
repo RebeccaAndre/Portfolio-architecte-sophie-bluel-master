@@ -28,3 +28,16 @@ function displayProjects(projects) {
     gallery.appendChild(figure);
   });
 }
+
+// //Fonction pour filtrer les projets par catégorie et les afficher
+function filterProjectsByCategory(category) {
+  if (category === "Tous") {
+    displayProjects(allProjects);
+  } else {
+    // Filtre les projets par catégorie
+    let filteredProjects = allProjects.filter(
+      (project) => project.category.name === category
+    );
+    displayProjects(filteredProjects);
+  }
+}
