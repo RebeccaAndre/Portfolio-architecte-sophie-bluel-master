@@ -41,3 +41,42 @@ function filterProjectsByCategory(category) {
     displayProjects(filteredProjects);
   }
 }
+
+// // II. Gestion des interactions utilisateur avec les boutons de filtre et la fenêtre modale
+
+// // Attache les écouteurs d'événements après le chargement complet du DOM
+document.addEventListener("DOMContentLoaded", function () {
+  fetchProjects();
+
+  // Attache les écouteurs d'événements pour les boutons de filtre de catégorie
+  document.querySelectorAll(".filter-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const category = button.getAttribute("data-category");
+      filterProjectsByCategory(category);
+    });
+  });
+});
+
+// // III.Implémentation de la fonctionnalité déconnexion et connexion utilisateur
+document.addEventListener("DOMContentLoaded", function () {
+  const authToken = sessionStorage.getItem("authToken");
+  const modifierButton = document.getElementById("open-modal");
+  const loginLogoutButton = document.getElementById("login-logout");
+
+  if (authToken) {
+    // Utilisateur connecté
+    modifierButton.style.display = "block";
+    loginLogoutButton.textContent = "Déconnecter";
+    loginLogoutButton.onclick = function () {
+      sessionStorage.removeItem("authToken");
+      window.location.reload();
+    };
+  } else {
+    // Utilisateur non connecté
+    modifierButton.style.display = "none";
+    loginLogoutButton.textContent = "Connexion";
+    loginLogoutButton.onclick = function () {
+      window.location.href = "login.html";
+    };
+  }
+});
