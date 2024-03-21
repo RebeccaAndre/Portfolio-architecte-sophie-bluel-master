@@ -310,3 +310,107 @@ document.addEventListener("DOMContentLoaded", function () {
 
   checkFormAndToggleSubmitButton();
 });
+
+////VII. Envoi des données du formulaire à l'API pour ajouter un nouveau projet
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("photoAddForm");
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    // Déplacer la récupération des valeurs du formulaire ici, juste avant la requête fetch
+    let photoInput = document.getElementById("file").files[0];
+    let titleInput = document.getElementById("title").value;
+    let categorySelect = document.getElementById("category").value;
+
+    if (!photoInput) {
+      // Vérifie si une image a été sélectionnée
+      alert("Veuillez sélectionner une image");
+      return;
+    }
+
+    // Créez un FormData ici pour inclure les valeurs récupérées
+    let formData = new FormData();
+    formData.append("image", photoInput);
+    formData.append("title", titleInput);
+    formData.append("category", categorySelect);
+
+    fetch("http://localhost:5678/api/works", {
+      // Envoie les données du formulaire à l'API pour ajouter un nouveau projet à la base de données
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+      },
+      body: formData,
+    })
+      .then((response) => {
+        console.log(response);
+        if (!response.ok) {
+          throw new Error("Problème avec la réponse de l'API");
+        }
+        return response.json();
+      })
+      .then((newProject) => {
+        // Ajoute le nouveau projet au tableau des projets existants
+        allProjects.push(newProject);
+        console.log(allProjects);
+
+        // Crée et ajoute le projet à la galerie
+        const newGalleryItem = createGalleryItem(newProject);
+        document.querySelector(".gallery").appendChild(newGalleryItem);
+        console.log(newGalleryItem);
+
+        // Crée et ajoute le projet à la modale
+        const newModalItem = createModalItem(newProject);
+        document
+          .querySelector("#modal-projects-container")
+          .appendChild(newModalItem);
+        console.log(newModalItem);
+
+        alert("Projet ajouté avec succès !");
+        form.reset();
+        document.getElementById("modal").style.display = "none";
+      });
+  });
+});
+
+// Crée un élément de galerie pour un projet
+function createGalleryItem(project) {
+  const figure = document.createElement("figure");
+  const img = document.createElement("img");
+  img.src = project.imageUrl;
+  img.alt = project.title;
+  const figcaption = document.createElement("figcaption");
+  figcaption.textContent = project.title;
+  figure.appendChild(img);
+  figure.appendChild(figcaption);
+  return figure;
+}
+
+// Crée un élément de la modale pour un projet
+function createModalItem(project) {
+  const figure = document.createElement("figure");
+  figure.classList.add("project-figure");
+  const img = document.createElement("img");
+  img.src = project.imageUrl;
+  img.alt = project.title;
+  figure.appendChild(img);
+
+  // Crée un conteneur pour l'icône de corbeille avec le fond noir et le bord arrondi
+  const iconContainer = document.createElement("div");
+  iconContainer.classList.add("Rectangle20");
+  figure.appendChild(iconContainer);
+
+  // Ajoute une icône de poubelle pour chaque projet
+  const deleteIcon = document.createElement("i");
+  deleteIcon.classList.add("fa-regular", "fa-trash-can");
+  deleteIcon.setAttribute("data-id", project.id);
+  deleteIcon.style.cursor = "pointer";
+  iconContainer.appendChild(deleteIcon);
+
+  deleteIcon.addEventListener("click", function () {
+    deleteProject(project.id);
+  });
+
+  return figure;
+}
