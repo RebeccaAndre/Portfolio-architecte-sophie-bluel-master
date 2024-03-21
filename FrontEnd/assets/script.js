@@ -129,3 +129,184 @@ document.addEventListener("DOMContentLoaded", () => {
     displayProjectsInModal(allProjects);
   });
 });
+
+// // V.Affichage des 11 projets dans la fenêtre modale sans les titres et avec les "poubelles" sur chaque image
+
+// Fonction pour afficher les projets dans la fenêtre modale, qui inclut les icônes de poubelle
+function displayProjectsInModal(projects) {
+  let modalContainer = document.querySelector("#modal-projects-container");
+  modalContainer.innerHTML = "";
+
+  projects.forEach((project) => {
+    let figure = document.createElement("figure");
+    figure.classList.add("project-figure");
+
+    let img = document.createElement("img");
+    img.src = project.imageUrl;
+    img.alt = project.title;
+    figure.appendChild(img);
+
+    // Crée un conteneur pour l'icône de corbeille avec le fond noir et le bord arrondi
+    let iconContainer = document.createElement("div");
+    iconContainer.classList.add("Rectangle20");
+    figure.appendChild(iconContainer);
+
+    // Ajoute une icône de poubelle pour chaque projet
+    let deleteIcon = document.createElement("i");
+    deleteIcon.classList.add("fa-regular", "fa-trash-can");
+    deleteIcon.setAttribute("data-id", project.id);
+    deleteIcon.style.cursor = "pointer";
+    iconContainer.appendChild(deleteIcon);
+
+    deleteIcon.addEventListener("click", function () {
+      console.log(`Demande de suppression pour le projet ${project.id}`);
+      deleteProject(project.id);
+    });
+
+    modalContainer.appendChild(figure);
+  });
+}
+
+// Supprimer une image de la modale
+function deleteProject(projectId) {
+  // Supprime le projet du tableau allProjects
+  allProjects = allProjects.filter((project) => project.id !== projectId);
+
+  // Supprime le projet de la galerie
+  const galleryItem = document.querySelector(
+    `.gallery figure img[src="http://localhost:5678/api/works/${projectId}/image"]`
+  );
+  if (galleryItem) {
+    galleryItem.parentElement.remove();
+  }
+
+  // Rafraîchit l'affichage des projets dans la modale
+  displayProjectsInModal(allProjects);
+
+  // Supprime le projet de la base de données
+  fetch(`http://localhost:5678/api/works/${projectId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+    },
+  });
+}
+
+// Basculer Entre Vues Modales
+function toggleModalViews(viewToShow) {
+  const galleryView = document.getElementById("modal-gallery-view");
+  const addPhotoView = document.getElementById("modal-add-photo-view");
+
+  // Afficher la vue demandée et masquer l'autre
+  if (viewToShow === "addPhoto") {
+    galleryView.style.display = "none";
+    addPhotoView.style.display = "block";
+  } else {
+    galleryView.style.display = "flex";
+    addPhotoView.style.display = "none";
+  }
+}
+
+// Ajouter un gestionnaire d'événements pour le bouton "Ajouter une photo"
+document.querySelector("#goToAddPhoto").addEventListener("click", function () {
+  toggleModalViews("addPhoto");
+});
+
+// Ajouter un gestionnaire d'événements pour le bouton de retour à la galerie
+document
+  .querySelector("#modal-add-photo-view .fa-arrow-left")
+  .addEventListener("click", function () {
+    toggleModalViews("gallery");
+  });
+
+// // VI. Gestion de la Prévisualisation d'Image et des Catégories
+
+// Initialisation de la prévisualisation d'image
+document.addEventListener("DOMContentLoaded", function () {
+  let previewImg = document.querySelector("#addPhotoForm img.image-preview");
+  let inputFile = document.querySelector("#addPhotoForm input[type='file']");
+  let labelFile = document.querySelector("#addPhotoForm label.AjouterPhoto");
+  let iconFile = document.querySelector("#addPhotoForm .fa-image");
+  let pFile = document.querySelector("#addPhotoForm .max-file-size");
+
+  // Ecouter les changements sur l'input file pour afficher l'image sélectionnée dans la balise img de la prévisualisation d'image
+  inputFile.addEventListener("change", function () {
+    let file = inputFile.files[0];
+    if (file) {
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        previewImg.src = e.target.result;
+        previewImg.style.display = "block";
+        labelFile.style.display = "none";
+        iconFile.style.display = "none";
+        pFile.style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+});
+
+// Récupération des catégories depuis une API pour les afficher dans le formulaire d'ajout de photo
+async function getCategorys() {
+  try {
+    const response = await fetch("http://localhost:5678/api/categories");
+    if (!response.ok) {
+      throw new Error(`Erreur API : ${response.statusText}`);
+    }
+    const categories = await response.json();
+    return categories;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des catégories :", error);
+  }
+}
+
+// Affichage des catégories dans le menu déroulant du formulaire d'ajout de photo
+async function displayCategoryModal() {
+  try {
+    const select = document.getElementById("category");
+    const categories = await getCategorys();
+    categories.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category.id;
+      option.textContent = category.name;
+      select.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'affichage des catégories :", error);
+  }
+}
+
+// Cette fonction est appelée une fois que le DOM est complètement chargé
+document.addEventListener("DOMContentLoaded", function () {
+  displayCategoryModal();
+});
+
+// Fonction pour activer le bouton "Valider" et changer sa couleur en #1D6154 lorsque tous les champs sont remplis
+document.addEventListener("DOMContentLoaded", function () {
+  let titleInput = document.getElementById("title");
+  let categorySelect = document.getElementById("category");
+  let photoInput = document.getElementById("file");
+  let submitButton = document.querySelector(".valider");
+
+  function checkFormAndToggleSubmitButton() {
+    // Vérifie si tous les champs sont remplis pour activer le bouton "Valider"
+    if (titleInput.value && photoInput.files.length && categorySelect.value) {
+      submitButton.style.backgroundColor = "#1D6154";
+      submitButton.disabled = false;
+    } else {
+      // Désactive le bouton "Valider" si un champ est vide
+      submitButton.style.backgroundColor = "#a7a7a7";
+      submitButton.disabled = true;
+    }
+  }
+
+  // Attache des écouteurs d'événements sur les champs pour vérifier l'état du formulaire
+  if (titleInput)
+    titleInput.addEventListener("input", checkFormAndToggleSubmitButton);
+  if (categorySelect)
+    categorySelect.addEventListener("change", checkFormAndToggleSubmitButton);
+  if (photoInput)
+    photoInput.addEventListener("change", checkFormAndToggleSubmitButton);
+
+  checkFormAndToggleSubmitButton();
+});
