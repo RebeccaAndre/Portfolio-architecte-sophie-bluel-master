@@ -144,19 +144,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Empecher la fermeture de la fenetre modale "Galerie Photo" lors de la suppression d'un projet (en cliquant sur l'icone poubelle)
-    document
-      .querySelector("#modal-gallery-view")
-      .addEventListener("click", (event) => {
-        event.stopPropagation(); // Empêche la propagation de l'événement pour éviter la fermeture de la fenêtre modale lors de la suppression d'un projet (en cliquant sur l'icône de poubelle)
-      });
+    // // Empecher la fermeture de la fenetre modale "Galerie Photo" lors de la suppression d'un projet (en cliquant sur l'icone poubelle)
+    // document
+    //   .querySelector("#modal-gallery-view")
+    //   .addEventListener("click", (event) => {
+    //     event.stopPropagation(); // Empêche la propagation de l'événement pour éviter la fermeture de la fenêtre modale lors de la suppression d'un projet (en cliquant sur l'icône de poubelle)
+    //   });
 
-    // Empecher la fermeture de la fenetre modale "Ajouter une photo" lors de l'ajout d'un projet
-    document
-      .querySelector("#modal-add-photo-view")
-      .addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
+    // // Empecher la fermeture de la fenetre modale "Ajouter une photo" lors de l'ajout d'un projet
+    // document
+    //   .querySelector("#modal-add-photo-view")
+    //   .addEventListener("click", (event) => {
+    //     event.stopPropagation();
+    //   });
   }
 });
 
@@ -243,31 +243,31 @@ function deleteProject(projectId) {
 
 // Gestion de l'ajout de photo et de la bascule entre les vues modales (Galerie et Ajouter une Photo) dans la fenêtre modale sans recharger la page
 // Ajout des écouteurs d'événements pour éviter la fermeture de la fenêtre modale "Ajouter une photo" lors de l'ajout d'un projet
-document.addEventListener("DOMContentLoaded", function () {
-  const goToAddPhotoButton = document.getElementById("goToAddPhoto");
-  const backButton = document.querySelector(
-    "#modal-add-photo-view .fa-arrow-left"
-  );
-  const form = document.getElementById("photoAddForm");
+// document.addEventListener("DOMContentLoaded", function () {
+//   const goToAddPhotoButton = document.getElementById("goToAddPhoto");
+//   const backButton = document.querySelector(
+//     "#modal-add-photo-view .fa-arrow-left"
+//   );
+//   const form = document.getElementById("photoAddForm");
 
-  // Ouvrir la vue "Ajouter une photo"
-  goToAddPhotoButton.addEventListener("click", function (event) {
-    event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-    toggleModalViews("addPhoto");
-  });
+//   // Ouvrir la vue "Ajouter une photo"
+//   goToAddPhotoButton.addEventListener("click", function (event) {
+//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
+//     toggleModalViews("addPhoto");
+//   });
 
-  // Retour à la vue galerie depuis "Ajouter une photo"
-  backButton.addEventListener("click", function (event) {
-    event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-    toggleModalViews("gallery");
-  });
+//   // Retour à la vue galerie depuis "Ajouter une photo"
+//   backButton.addEventListener("click", function (event) {
+//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
+//     toggleModalViews("gallery");
+//   });
 
-  // Soumission du formulaire d'ajout de photo
-  form.addEventListener("submit", function (event) {
-    event.preventDefault(); // Empêche le rechargement de la page
-    event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-  });
-});
+//   // Soumission du formulaire d'ajout de photo
+//   form.addEventListener("submit", function (event) {
+//     event.preventDefault(); // Empêche le rechargement de la page
+//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
+//   });
+// });
 
 // Fonction pour basculer Entre Vues Modales (Galerie et Ajouter une Photo) dans la fenêtre modale
 function toggleModalViews(viewToShow) {
@@ -365,6 +365,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let photoInput = document.getElementById("file");
   let submitButton = document.querySelector(".valider");
 
+  //Fonction pour activer le bouton "Valider"
   function checkFormAndToggleSubmitButton() {
     // Vérifie si tous les champs sont remplis pour activer le bouton "Valider"
     if (titleInput.value && photoInput.files.length && categorySelect.value) {
@@ -377,12 +378,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Attache des écouteurs d'événements sur les champs pour vérifier l'état du formulaire
+  // Attache des écouteurs d'événements sur les champs pour vérifier l'état du formulaire et activer le bouton "Valider"
   if (titleInput)
     titleInput.addEventListener("input", checkFormAndToggleSubmitButton);
   if (categorySelect)
     categorySelect.addEventListener("change", checkFormAndToggleSubmitButton);
   if (photoInput)
+    // Vérifie si une image a été sélectionnée
     photoInput.addEventListener("change", checkFormAndToggleSubmitButton);
 
   checkFormAndToggleSubmitButton();
@@ -421,7 +423,6 @@ document.addEventListener("DOMContentLoaded", function () {
       body: formData,
     })
       .then((response) => {
-        console.log(response);
         if (!response.ok) {
           throw new Error("Problème avec la réponse de l'API");
         }
@@ -430,23 +431,18 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((newProject) => {
         // Ajoute le nouveau projet au tableau des projets existants
         allProjects.push(newProject);
-        console.log(allProjects);
 
         // Crée et ajoute le projet à la galerie
         const newGalleryItem = createGalleryItem(newProject);
         document.querySelector(".gallery").appendChild(newGalleryItem);
-        console.log(newGalleryItem);
 
         // Crée et ajoute le projet à la modale
         const newModalItem = createModalItem(newProject);
         document
           .querySelector("#modal-projects-container")
           .appendChild(newModalItem);
-        console.log(newModalItem);
 
         alert("Projet ajouté avec succès !");
-        form.reset();
-        document.getElementById("modal").style.display = "none";
       });
   });
 });
