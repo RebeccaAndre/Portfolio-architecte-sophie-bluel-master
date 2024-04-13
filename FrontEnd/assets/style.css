@@ -672,3 +672,8 @@ a {
   text-decoration: none;
   color: black;
 }
+
+.active-filter-btn {
+  background-color: #1d6154; /* Vert */
+  color: white; /* Texte en blanc pour un meilleur contraste */
+}
