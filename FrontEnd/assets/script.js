@@ -1,97 +1,44 @@
-// I. Récupération et affichage des travaux depuis l'API pour la galerie du site web
-let allProjects = [];
+// Variable globale pour stocker tous les projets
+let tousLesProjets = [];
 
-// // Fonction pour récupérer les projets depuis l'API et les afficher dans la galerie du site web
-function fetchProjects() {
-  fetch("http://localhost:5678/api/works")
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Projects fetched successfully:", data);
-      allProjects = data;
-      displayProjects(data);
-    })
-    .catch((error) => console.error("Error fetching data: ", error));
-}
-
-// // Fonction pour afficher les projets dans la galerie du site web
-function displayProjects(projects) {
-  const gallery = document.querySelector(".gallery");
-  gallery.innerHTML = "";
-  projects.forEach((project) => {
-    const figure = document.createElement("figure");
-    figure.dataset.id = project.id;
-    const img = document.createElement("img");
-    img.src = project.imageUrl;
-    img.alt = project.title;
-    const figcaption = document.createElement("figcaption");
-    figcaption.textContent = project.title;
-    figure.appendChild(img);
-    figure.appendChild(figcaption);
-    gallery.appendChild(figure);
-  });
-}
-
-// // Gestion de la Sélection et Affichage des Catégories de Projets
-document.querySelectorAll(".filter-btn").forEach((button) => {
-  button.addEventListener("click", () => {
-    // Supprime la classe active de tous les boutons de filtre de catégorie
-    document.querySelectorAll(".filter-btn").forEach((btn) => {
-      btn.classList.remove("active-filter-btn");
-    });
-
-    // Ajoute la classe active au bouton cliqué pour le mettre en surbrillance
-    button.classList.add("active-filter-btn");
-
-    const category = button.getAttribute("data-category");
-    filterProjectsByCategory(category);
-  });
-});
-
-// //Fonction pour filtrer les projets par catégorie et les afficher dans la galerie du site web
-function filterProjectsByCategory(category) {
-  if (category === "Tous") {
-    displayProjects(allProjects);
-  } else {
-    // Filtre les projets par catégorie
-    let filteredProjects = allProjects.filter(
-      (project) => project.category.name === category
-    );
-    displayProjects(filteredProjects);
+// Récupère et affiche les projets depuis l'API
+async function recupererEtAfficherProjets() {
+  try {
+    const reponse = await fetch("http://localhost:5678/api/works");
+    if (!reponse.ok) throw new Error("Échec de la récupération des projets");
+    const donnees = await reponse.json();
+    tousLesProjets = donnees;
+    afficherProjets(donnees);
+    afficherProjetsDansModale(donnees);
+  } catch (erreur) {
+    console.error("Erreur lors de la récupération des données : ", erreur);
   }
 }
 
-// Sélectionne le bouton "Tous" par défaut au chargement de la page
-document.addEventListener("DOMContentLoaded", function () {
-  const allButton = document.querySelector(".filter-btn[data-category='Tous']");
-  if (allButton) {
-    allButton.classList.add("active-filter-btn");
-  }
-});
+// Affiche les projets dans la galerie
+function afficherProjets(projects) {
+  const galerie = document.querySelector(".gallery");
+  galerie.innerHTML = projects
+    .map(
+      (projet) => `
+    <figure data-id="${projet.id}">
+      <img src="${projet.imageUrl}" alt="${projet.title}">
+      <figcaption>${projet.title}</figcaption>
+    </figure>
+  `
+    )
+    .join("");
+}
 
-// // II. Gestion des interactions utilisateur avec les boutons de filtre et la fenêtre modale
-// // Attache les écouteurs d'événements après le chargement complet du DOM
-document.addEventListener("DOMContentLoaded", function () {
-  fetchProjects();
-
-  // Attache les écouteurs d'événements pour les boutons de filtre de catégorie
-  document.querySelectorAll(".filter-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const category = button.getAttribute("data-category");
-      filterProjectsByCategory(category);
-    });
-  });
-});
-
-// // III.Implémentation de la fonctionnalité déconnexion et connexion utilisateur
-document.addEventListener("DOMContentLoaded", function () {
+// Gestion de la connexion/déconnexion utilisateur
+function gestionConnexionUtilisateur() {
   const authToken = sessionStorage.getItem("authToken");
   const modifierButton = document.getElementById("open-modal");
   const loginLogoutButton = document.getElementById("login-logout");
-  categoryFilters = document.getElementById("category-filters");
+  const categoryFilters = document.getElementById("category-filters");
 
   if (authToken) {
-    // Utilisateur connecté
-    categoryFilters.style.display = "none"; //
+    categoryFilters.style.display = "none";
     modifierButton.style.display = "block";
     loginLogoutButton.textContent = "Déconnecter";
     loginLogoutButton.onclick = function () {
@@ -99,391 +46,250 @@ document.addEventListener("DOMContentLoaded", function () {
       window.location.reload();
     };
   } else {
-    // Utilisateur non connecté
     modifierButton.style.display = "none";
     loginLogoutButton.textContent = "Connexion";
     loginLogoutButton.onclick = function () {
       window.location.href = "login.html";
     };
   }
-});
+}
 
-// // IV. Gestion de l'apparition et disparition de la fenêtre modale
-// fonction pour ouvrir la fenêtre modale lors du clic sur le bouton "Modifier" et afficher les projets dans la fenêtre modale
-document.addEventListener("DOMContentLoaded", () => {
-  const modal = document.getElementById("modal");
-  const closeButton = document.querySelector(".close-button");
-  goToAddPhoto = document.getElementById("goToAddPhoto");
-  backToGalleryArrow = document.querySelector(
-    "#modal-add-photo-view .fa-arrow-left"
+// Filtre et affiche les projets par catégorie
+function filtrerProjetsParCategorie(categorie) {
+  const projetsFiltres =
+    categorie === "Tous"
+      ? tousLesProjets
+      : tousLesProjets.filter((projet) => projet.category.name === categorie);
+  afficherProjets(projetsFiltres);
+}
+
+// Active le bouton de filtre et met à jour les projets affichés en fonction de la catégorie sélectionnée
+function activerBoutonFiltre(button) {
+  document
+    .querySelectorAll(".filter-btn")
+    .forEach((btn) => btn.classList.remove("active-filter-btn"));
+  button.classList.add("active-filter-btn");
+}
+
+// Configure les écouteurs d'événements pour les boutons de filtre et filtre les projets par catégorie
+function configurerBoutonsFiltre() {
+  document.querySelectorAll(".filter-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      activerBoutonFiltre(button);
+      const categorie = button.getAttribute("data-category");
+      filtrerProjetsParCategorie(categorie);
+    });
+  });
+}
+
+// Initialise la fonctionnalité de la modale et gère l'ouverture et la fermeture de la modale
+function configurerModale() {
+  const modale = document.getElementById("modal");
+  const ouvrirModaleBouton = document.getElementById("open-modal");
+  const fermerBouton = document.querySelector(".close-button");
+
+  // Ouvrir la modale en cliquant sur le bouton "Modifier"
+  ouvrirModaleBouton.addEventListener(
+    "click",
+    () => (modale.style.display = "block")
   );
-  const openModalButton = document.getElementById("open-modal");
 
-  // Ouvrir la modale
-  if (openModalButton) {
-    openModalButton.addEventListener("click", () => {
-      console.log("Ouverture de la modale");
-      modal.style.display = "block";
-    });
-  } else {
-    console.log("Erreur: Bouton ouvrir modale non trouvé.");
-  }
-
-  // Fermer la modale
-  if (closeButton) {
-    closeButton.addEventListener("click", () => {
-      console.log("Fermeture de la modale via le bouton de fermeture");
-      modal.style.display = "none";
-    });
-
-    // Fermer la modale en cliquant en dehors
-    modal.addEventListener("click", (event) => {
-      if (event.target === modal) {
-        console.log("Fermeture de la modale en cliquant à l'extérieur");
-        modal.style.display = "none";
-      }
-    });
-
-    // // Empecher la fermeture de la fenetre modale "Galerie Photo" lors de la suppression d'un projet (en cliquant sur l'icone poubelle)
-    // document
-    //   .querySelector("#modal-gallery-view")
-    //   .addEventListener("click", (event) => {
-    //     event.stopPropagation(); // Empêche la propagation de l'événement pour éviter la fermeture de la fenêtre modale lors de la suppression d'un projet (en cliquant sur l'icône de poubelle)
-    //   });
-
-    // // Empecher la fermeture de la fenetre modale "Ajouter une photo" lors de l'ajout d'un projet
-    // document
-    //   .querySelector("#modal-add-photo-view")
-    //   .addEventListener("click", (event) => {
-    //     event.stopPropagation();
-    //   });
-  }
-});
-
-// Gestionnaire d'événements pour l'ouverture de la modale
-document.addEventListener("DOMContentLoaded", () => {
-  const openModalButton = document.getElementById("open-modal");
-  const modal = document.getElementById("modal");
-
-  openModalButton.addEventListener("click", () => {
-    modal.style.display = "block";
-    displayProjectsInModal(allProjects);
-  });
-});
-
-// // V.Affichage des 11 projets dans la fenêtre modale sans les titres et avec les "poubelles" sur chaque image
-
-// Fonction pour afficher les projets dans la fenêtre modale, qui inclut les icônes de poubelle
-function displayProjectsInModal(projects) {
-  let modalContainer = document.querySelector("#modal-projects-container");
-  modalContainer.innerHTML = "";
-
-  projects.forEach((project) => {
-    let figure = document.createElement("figure");
-    figure.classList.add("project-figure");
-    figure.dataset.id = project.id; // Ajoute un attribut data-id avec l'ID du projet
-
-    let img = document.createElement("img");
-    img.src = project.imageUrl;
-    img.alt = project.title;
-    figure.appendChild(img);
-
-    // Crée un conteneur pour l'icône de corbeille avec le fond noir et le bord arrondi
-    let iconContainer = document.createElement("div");
-    iconContainer.classList.add("Rectangle20");
-    figure.appendChild(iconContainer);
-
-    // Ajoute une icône de poubelle pour chaque projet
-    let deleteIcon = document.createElement("i");
-    deleteIcon.classList.add("fa-regular", "fa-trash-can");
-    deleteIcon.setAttribute("data-id", project.id);
-    deleteIcon.style.cursor = "pointer";
-    iconContainer.appendChild(deleteIcon);
-
-    // Supprimer un projet en cliquant sur l'icône de poubelle dans la fenêtre modale (sans recharger la page) en utilisant l'API
-    deleteIcon.addEventListener("click", function (event) {
-      event.stopPropagation(); // Empêche la propagation de l'événement pour éviter la fermeture de la fenêtre modale lors de la suppression d'un projet (en cliquant sur l'icône de poubelle)
-      deleteProject(project.id);
-    });
-
-    modalContainer.appendChild(figure);
+  // Fermer la modale en cliquant sur le bouton de fermeture ou en dehors de la modale (sur le fond)
+  fermerBouton.addEventListener("click", () => (modale.style.display = "none"));
+  modale.addEventListener("click", (evenement) => {
+    if (evenement.target === modale) modale.style.display = "none";
   });
 }
 
-// // Supprimer un projet et mettre à jour l'interface utilisateur sans recharger la page. Je veux pas que la fenetre modale se ferme pendant la suppression et je veux pas que la page se recharge après la suppression d'un projet (je veux que le projet disparaisse de l'interface utilisateur sans recharger la page)
+// Affiche les projets dans la modale et gère la suppression sans rechargement de la page
+function afficherProjetsDansModale(projects) {
+  let conteneurModal = document.querySelector("#modal-projects-container");
+  conteneurModal.innerHTML = projects
+    .map(
+      (projet) => `
+    <figure class="project-figure" data-id="${projet.id}">
+      <img src="${projet.imageUrl}" alt="${projet.title}">
+      <div class="Rectangle20">
+        <i class="fa-regular fa-trash-can" data-id="${projet.id}" style="cursor: pointer;"></i>
+      </div>
+    </figure>
+  `
+    )
+    .join("");
 
-// fonction pour supprimer un projet en utilisant l'API et mettre à jour l'interface utilisateur sans recharger la page
-function deleteProject(projectId) {
-  fetch(`http://localhost:5678/api/works/${projectId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Problème avec la réponse de l'API");
+  // Ajoute des écouteurs d'événements pour la suppression de projets dans la modale
+  conteneurModal.querySelectorAll(".fa-trash-can").forEach((icon) => {
+    icon.addEventListener("click", function (event) {
+      supprimerProjet(icon.getAttribute("data-id"), event); // Passez l'événement ici
+    });
+  });
+}
+
+// Supprime un projet en utilisant l'API sans recharger la page et met à jour les projets affichés dans la galerie et la modale
+async function supprimerProjet(projectId, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  try {
+    const reponse = await fetch(
+      `http://localhost:5678/api/works/${projectId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+        },
       }
-      console.log("Projet supprimé avec succès");
-
-      // Supprime le projet du tableau allProjects et du DOM comme avant
-      allProjects = allProjects.filter((project) => project.id !== projectId);
-      const figureToDelete = document.querySelector(
-        `figure[data-id="${projectId}"]`
-      );
-      if (figureToDelete) {
-        figureToDelete.remove();
-      }
-    })
-
-    .catch((error) =>
-      console.error("Erreur lors de la suppression du projet :", error)
     );
-}
+    if (!reponse.ok) throw new Error("Problème avec la réponse de l'API");
 
-// Gestion de l'ajout de photo et de la bascule entre les vues modales (Galerie et Ajouter une Photo) dans la fenêtre modale sans recharger la page
-// Ajout des écouteurs d'événements pour éviter la fermeture de la fenêtre modale "Ajouter une photo" lors de l'ajout d'un projet
-// document.addEventListener("DOMContentLoaded", function () {
-//   const goToAddPhotoButton = document.getElementById("goToAddPhoto");
-//   const backButton = document.querySelector(
-//     "#modal-add-photo-view .fa-arrow-left"
-//   );
-//   const form = document.getElementById("photoAddForm");
+    // Mettre à jour la liste des projets affichés dans la galerie et la modale après la suppression du projet
+    // tousLesProjets = tousLesProjets.filter((projet) => projet.id !== projectId);
+    // afficherProjets(tousLesProjets);
+    // afficherProjetsDansModale(tousLesProjets);
 
-//   // Ouvrir la vue "Ajouter une photo"
-//   goToAddPhotoButton.addEventListener("click", function (event) {
-//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-//     toggleModalViews("addPhoto");
-//   });
-
-//   // Retour à la vue galerie depuis "Ajouter une photo"
-//   backButton.addEventListener("click", function (event) {
-//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-//     toggleModalViews("gallery");
-//   });
-
-//   // Soumission du formulaire d'ajout de photo
-//   form.addEventListener("submit", function (event) {
-//     event.preventDefault(); // Empêche le rechargement de la page
-//     event.stopPropagation(); // Empêche la fermeture inattendue de la modale
-//   });
-// });
-
-// Fonction pour basculer Entre Vues Modales (Galerie et Ajouter une Photo) dans la fenêtre modale
-function toggleModalViews(viewToShow) {
-  const galleryView = document.getElementById("modal-gallery-view");
-  const addPhotoView = document.getElementById("modal-add-photo-view");
-
-  // Afficher la vue demandée et masquer l'autre
-  if (viewToShow === "addPhoto") {
-    galleryView.style.display = "none";
-    addPhotoView.style.display = "block";
-  } else {
-    galleryView.style.display = "flex";
-    addPhotoView.style.display = "none";
+    // Garder la modale ouverte après la suppression du projet
+    const modal = document.getElementById("modal");
+    modal.style.display = "block";
+  } catch (erreur) {
+    console.error("Erreur lors de la suppression du projet :", erreur);
   }
 }
 
-// Ajouter un gestionnaire d'événements pour le bouton "Ajouter une photo"
-document.querySelector("#goToAddPhoto").addEventListener("click", function () {
-  toggleModalViews("addPhoto");
-});
+// Gère l'ajout de photos et la navigation entre les vues de la modale
+function configurerNavigationModale() {
+  const boutonAjoutPhoto = document.getElementById("goToAddPhoto");
+  const boutonRetour = document.querySelector(
+    "#modal-add-photo-view .fa-arrow-left" // Sélectionne l'icône flèche gauche dans la vue d'ajout de photo de la modale
+  );
 
-// Ajouter un gestionnaire d'événements pour le bouton de retour à la galerie
-document
-  .querySelector("#modal-add-photo-view .fa-arrow-left")
-  .addEventListener("click", function () {
-    toggleModalViews("gallery");
+  // Affiche la vue d'ajout de photo lors du clic sur le bouton "Ajouter une photo"
+  boutonAjoutPhoto.addEventListener("click", () =>
+    basculerVuesModale("addPhoto")
+  ); // Retourne à la vue de la galerie lors du clic sur le bouton de retour
+  boutonRetour.addEventListener("click", () => basculerVuesModale("gallery"));
+}
+
+// Bascule entre les vues de la modale (galerie et ajout de photo) en fonction du paramètre de vue fourni (gallery ou addPhoto)
+function basculerVuesModale(vue) {
+  const vueGalerie = document.getElementById("modal-gallery-view");
+  const vueAjoutPhoto = document.getElementById("modal-add-photo-view");
+  vueGalerie.style.display = vue === "addPhoto" ? "none" : "flex"; // Cache la vue de la galerie si la vue d'ajout de photo est active
+  vueAjoutPhoto.style.display = vue === "addPhoto" ? "block" : "none"; // Cache la vue d'ajout de photo si la vue de la galerie est active
+}
+
+// Récupère et affiche les catégories depuis l'API
+async function recupererEtAfficherCategories() {
+  try {
+    const reponse = await fetch("http://localhost:5678/api/categories");
+    if (!reponse.ok) throw new Error("Erreur API");
+    const categories = await reponse.json();
+    const select = document.getElementById("category");
+    select.innerHTML = categories
+      .map(
+        (categorie) =>
+          `<option value="${categorie.id}">${categorie.name}</option>` // Affiche les catégories dans le menu déroulant du formulaire d'ajout de photo
+      )
+      .join("");
+  } catch (erreur) {
+    console.error("Erreur lors de la récupération des catégories :", erreur);
+  }
+}
+
+// Ajoute un projet via le formulaire
+async function ajouterProjetViaFormulaire() {
+  const formulaire = document.getElementById("photoAddForm");
+  formulaire.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const formData = new FormData(formulaire);
+    try {
+      const reponse = await fetch("http://localhost:5678/api/works", {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+        },
+      });
+      if (!reponse.ok) throw new Error("Erreur lors de l'ajout du projet");
+
+      const nouveauProjet = await reponse.json();
+      tousLesProjets.push(nouveauProjet);
+      afficherProjets(tousLesProjets);
+      afficherProjetsDansModale(tousLesProjets);
+      basculerVuesModale("gallery");
+    } catch (erreur) {
+      console.error("Erreur lors de l'ajout du projet :", erreur);
+    }
   });
+}
 
-// // VI. Gestion de la Prévisualisation d'Image et des Catégories
+// Initialise la prévisualisation d'image et vérifie l'état du formulaire
+function initialiserPrevisualisationImageEtVerifierFormulaire() {
+  const inputFile = document.querySelector("#addPhotoForm input[type='file']");
+  const previewImg = document.querySelector("#addPhotoForm img.image-preview");
+  const labelAjouterPhoto = document.querySelector(
+    "#addPhotoForm label.AjouterPhoto"
+  );
+  const iconImage = document.querySelector("#addPhotoForm .fa-image");
+  const titleInput = document.getElementById("title");
+  const categorySelect = document.getElementById("category");
+  const submitButton = document.querySelector(
+    "#photoAddForm button[type='submit']"
+  );
 
-// Initialisation de la prévisualisation d'image
-document.addEventListener("DOMContentLoaded", function () {
-  let previewImg = document.querySelector("#addPhotoForm img.image-preview");
-  let inputFile = document.querySelector("#addPhotoForm input[type='file']");
-  let labelFile = document.querySelector("#addPhotoForm label.AjouterPhoto");
-  let iconFile = document.querySelector("#addPhotoForm .fa-image");
-  let pFile = document.querySelector("#addPhotoForm .max-file-size");
-
-  // Ecouter les changements sur l'input file pour afficher l'image sélectionnée dans la balise img de la prévisualisation d'image
+  // Écouteur d'événement pour afficher l'image sélectionnée dans le formulaire d'ajout de photo et masquer le label et l'icône par défaut du formulaire d'ajout de photo lors de la sélection d'une image à télécharger
   inputFile.addEventListener("change", function () {
-    let file = inputFile.files[0];
-    if (file) {
-      let reader = new FileReader();
+    const fichier = inputFile.files[0];
+    if (fichier) {
+      const reader = new FileReader();
       reader.onload = function (e) {
         previewImg.src = e.target.result;
         previewImg.style.display = "block";
-        labelFile.style.display = "none";
-        iconFile.style.display = "none";
-        pFile.style.display = "none";
+        labelAjouterPhoto.style.display = "none"; // Cache le label
+        iconImage.style.display = "none"; // Cache l'icône
+        checkFormAndToggleSubmitButton(); // Vérifie l'état du formulaire après le changement
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(fichier); // Lit le contenu du fichier en tant qu'URL de données
+    } else {
+      // Réinitialise l'image de prévisualisation et affiche le label et l'icône par défaut du formulaire d'ajout de photo
+      previewImg.style.display = "none";
+      labelAjouterPhoto.style.display = "block";
+      iconImage.style.display = "block";
+      checkFormAndToggleSubmitButton(); // Vérifie l'état du formulaire après le changement
     }
   });
-});
 
-// Récupération des catégories depuis une API pour les afficher dans le formulaire d'ajout de photo
-async function getCategorys() {
-  try {
-    const response = await fetch("http://localhost:5678/api/categories");
-    if (!response.ok) {
-      throw new Error(`Erreur API : ${response.statusText}`);
-    }
-    const categories = await response.json();
-    return categories;
-  } catch (error) {
-    console.error("Erreur lors de la récupération des catégories :", error);
-  }
-}
-
-// Affichage des catégories dans le menu déroulant du formulaire d'ajout de photo
-async function displayCategoryModal() {
-  try {
-    const select = document.getElementById("category");
-    const categories = await getCategorys();
-    categories.forEach((category) => {
-      const option = document.createElement("option");
-      option.value = category.id;
-      option.textContent = category.name;
-      select.appendChild(option);
-    });
-  } catch (error) {
-    console.error("Erreur lors de l'affichage des catégories :", error);
-  }
-}
-
-// Cette fonction est appelée une fois que le DOM est complètement chargé
-document.addEventListener("DOMContentLoaded", function () {
-  displayCategoryModal();
-});
-
-// Fonction pour activer le bouton "Valider" et changer sa couleur en #1D6154 lorsque tous les champs sont remplis
-document.addEventListener("DOMContentLoaded", function () {
-  let titleInput = document.getElementById("title");
-  let categorySelect = document.getElementById("category");
-  let photoInput = document.getElementById("file");
-  let submitButton = document.querySelector(".valider");
-
-  //Fonction pour activer le bouton "Valider"
+  // Fonction pour vérifier l'état du formulaire et activer/désactiver le bouton "Valider" en fonction de l'état du formulaire
   function checkFormAndToggleSubmitButton() {
-    // Vérifie si tous les champs sont remplis pour activer le bouton "Valider"
-    if (titleInput.value && photoInput.files.length && categorySelect.value) {
-      submitButton.style.backgroundColor = "#1D6154";
+    if (
+      titleInput.value.trim() &&
+      inputFile.files.length > 0 &&
+      categorySelect.value
+    ) {
+      submitButton.style.backgroundColor = "#1D6154"; // Couleur lorsque le formulaire est valide
       submitButton.disabled = false;
     } else {
-      // Désactive le bouton "Valider" si un champ est vide
-      submitButton.style.backgroundColor = "#a7a7a7";
+      submitButton.style.backgroundColor = "#a7a7a7"; // Couleur lorsque le formulaire n'est pas valide
       submitButton.disabled = true;
     }
   }
 
-  // Attache des écouteurs d'événements sur les champs pour vérifier l'état du formulaire et activer le bouton "Valider"
-  if (titleInput)
-    titleInput.addEventListener("input", checkFormAndToggleSubmitButton);
-  if (categorySelect)
-    categorySelect.addEventListener("change", checkFormAndToggleSubmitButton);
-  if (photoInput)
-    // Vérifie si une image a été sélectionnée
-    photoInput.addEventListener("change", checkFormAndToggleSubmitButton);
+  // Écouteurs d'événements pour vérifier l'état du formulaire à chaque changement
+  titleInput.addEventListener("input", checkFormAndToggleSubmitButton);
+  categorySelect.addEventListener("change", checkFormAndToggleSubmitButton);
+  inputFile.addEventListener("change", checkFormAndToggleSubmitButton);
 
+  // Appel initial à la fonction pour définir l'état initial du bouton "Valider"
   checkFormAndToggleSubmitButton();
-});
-
-////VII. Envoi des données du formulaire à l'API pour ajouter un nouveau projet
-document.addEventListener("DOMContentLoaded", function () {
-  const form = document.getElementById("photoAddForm");
-
-  form.addEventListener("submit", function (event) {
-    event.preventDefault();
-
-    // Déplacer la récupération des valeurs du formulaire ici, juste avant la requête fetch
-    let photoInput = document.getElementById("file").files[0];
-    let titleInput = document.getElementById("title").value;
-    let categorySelect = document.getElementById("category").value;
-
-    if (!photoInput) {
-      // Vérifie si une image a été sélectionnée
-      alert("Veuillez sélectionner une image");
-      return;
-    }
-
-    // Créez un FormData ici pour inclure les valeurs récupérées
-    let formData = new FormData();
-    formData.append("image", photoInput);
-    formData.append("title", titleInput);
-    formData.append("category", categorySelect);
-
-    fetch("http://localhost:5678/api/works", {
-      // Envoie les données du formulaire à l'API pour ajouter un nouveau projet à la base de données
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
-      },
-      body: formData,
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Problème avec la réponse de l'API");
-        }
-        return response.json();
-      })
-      .then((newProject) => {
-        // Ajoute le nouveau projet au tableau des projets existants
-        allProjects.push(newProject);
-
-        // Crée et ajoute le projet à la galerie
-        const newGalleryItem = createGalleryItem(newProject);
-        document.querySelector(".gallery").appendChild(newGalleryItem);
-
-        // Crée et ajoute le projet à la modale
-        const newModalItem = createModalItem(newProject);
-        document
-          .querySelector("#modal-projects-container")
-          .appendChild(newModalItem);
-
-        alert("Projet ajouté avec succès !");
-      });
-  });
-});
-
-// Crée un élément de galerie pour un projet
-function createGalleryItem(project) {
-  const figure = document.createElement("figure");
-  const img = document.createElement("img");
-  img.src = project.imageUrl;
-  img.alt = project.title;
-  const figcaption = document.createElement("figcaption");
-  figcaption.textContent = project.title;
-  figure.appendChild(img);
-  figure.appendChild(figcaption);
-  return figure;
 }
 
-// Crée un élément de la modale pour un projet
-function createModalItem(project) {
-  const figure = document.createElement("figure");
-  figure.classList.add("project-figure");
-  const img = document.createElement("img");
-  img.src = project.imageUrl;
-  img.alt = project.title;
-  figure.appendChild(img);
-
-  // Crée un conteneur pour l'icône de corbeille avec le fond noir et le bord arrondi
-  const iconContainer = document.createElement("div");
-  iconContainer.classList.add("Rectangle20");
-  figure.appendChild(iconContainer);
-
-  // Ajoute une icône de poubelle pour chaque projet
-  const deleteIcon = document.createElement("i");
-  deleteIcon.classList.add("fa-regular", "fa-trash-can");
-  deleteIcon.setAttribute("data-id", project.id);
-  deleteIcon.style.cursor = "pointer";
-  iconContainer.appendChild(deleteIcon);
-
-  deleteIcon.addEventListener("click", function () {
-    deleteProject(project.id);
-  });
-
-  return figure;
-}
+document.addEventListener("DOMContentLoaded", async () => {
+  await recupererEtAfficherProjets();
+  configurerBoutonsFiltre();
+  configurerModale();
+  configurerNavigationModale();
+  initialiserPrevisualisationImageEtVerifierFormulaire();
+  await recupererEtAfficherCategories();
+  ajouterProjetViaFormulaire();
+  afficherProjetsDansModale(tousLesProjets);
+  gestionConnexionUtilisateur();
+});
